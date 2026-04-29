@@ -178,8 +178,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <div>
         <label>焙煎度</label>
         <select id="f-roast">
-          <option>ライト</option><option>ミディアム</option>
-          <option>ミディアムダーク</option><option>ダーク</option><option>不明</option>
+          <option>浅煎り</option><option>中煎り</option>
+          <option>深煎り</option>
         </select>
       </div>
     </div>
@@ -311,8 +311,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <div><label>産地</label><input id="b-origin" type="text" placeholder="例: エチオピア"></div>
       <div><label>焙煎度</label>
         <select id="b-roast">
-          <option>ライト</option><option>ミディアム</option>
-          <option>ミディアムダーク</option><option>ダーク</option><option>不明</option>
+          <option>浅煎り</option><option>中煎り</option>
+          <option>深煎り</option>
         </select>
       </div>
     </div>
@@ -405,6 +405,8 @@ function resetFlavors(){
   selectedFlavors=new Set();
   renderFlavorChips();
 }
+
+const TASTING_ITEMS=[
   {id:'sweetness', label:'甘み', en:'SWEETNESS', desc:'フルーツや砂糖を思わせる自然な甘さ'},
   {id:'body',      label:'ボディ', en:'BODY',      desc:'口の中での重さ・テクスチャー・濃度感'},
   {id:'acidity',   label:'酸味', en:'ACIDITY',   desc:'明るさとテイストのレイヤー、フルーティな印象'},
