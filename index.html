@@ -82,6 +82,12 @@ textarea{height:68px;resize:vertical}
 .dripper-option input[type=radio]{width:16px;height:16px;flex-shrink:0;accent-color:#1a1a18;margin:0;padding:0;border:none}
 .dripper-name{font-size:14px;color:#1a1a18}
 .tag-dripper{background:#F0EDE8;color:#5C4A2A}
+.bean-status-toggle{display:flex;gap:6px;margin-top:10px}
+.status-btn{flex:1;padding:7px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid #d8d6d0;background:#fff;color:#888;text-align:center}
+.status-btn.active-status{background:#E1F5EE;border-color:#0F6E56;color:#0F6E56}
+.status-btn.inactive-status{background:#f5f3ef;border-color:#ccc;color:#bbb}
+.bean-card-inactive{opacity:.5}
+.bean-section-label{font-size:11px;font-weight:600;color:#aaa;padding:8px 0 4px;letter-spacing:.05em}
 .tasting-row{margin-bottom:12px}
 .tasting-row:last-child{margin-bottom:0}
 .tasting-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
@@ -331,6 +337,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       </select>
     </div>
     <div><label>メモ（任意）</label><input id="b-note" type="text" placeholder="例: フルーティで華やかな香り"></div>
+    <div>
+      <label>ステータス</label>
+      <div class="bean-status-toggle">
+        <button class="status-btn active-status" id="b-status-active" onclick="setBeanStatus('active')">✓ 使用中</button>
+        <button class="status-btn" id="b-status-inactive" onclick="setBeanStatus('inactive')">使い切り</button>
+      </div>
+    </div>
     <div style="margin-top:16px"><button class="btn btn-primary" onclick="saveBean()">豆を登録</button></div>
   </div>
   <div id="bean-list"></div>
@@ -353,6 +366,13 @@ const DRIPPERS=[
   'ブルーボトルコーヒー ドリッパー'
 ];
 let rating=0, pours=[{water:'',time:''}], selectedDripper='';
+let beanStatusInput='active';
+
+function setBeanStatus(s){
+  beanStatusInput=s;
+  document.getElementById('b-status-active').className='status-btn'+(s==='active'?' active-status':'');
+  document.getElementById('b-status-inactive').className='status-btn'+(s==='inactive'?' active-status':'');
+}
 
 function renderDripperList(){
   document.getElementById('dripper-list').innerHTML=DRIPPERS.map((d,i)=>`
@@ -531,7 +551,7 @@ function onMethodChange(){
 }
 function populateBeanSelect(){
   const sel=document.getElementById('f-bean');
-  const beans=getBeans();
+  const beans=getBeans().filter(b=>b.status!=='inactive');
   sel.innerHTML='<option value="">— 豆を選択（または手入力）—</option>';
   beans.forEach(b=>{
     const days=daysFromRoast(b.roastDate);
@@ -667,10 +687,12 @@ function saveBean(){
     process:document.getElementById('b-process').value,
     variety:document.getElementById('b-variety').value.trim(),
     shop:document.getElementById('b-shop').value.trim(),
-    note:document.getElementById('b-note').value.trim()};
+    note:document.getElementById('b-note').value.trim(),
+    status:beanStatusInput};
   const arr=getBeans();arr.unshift(bean);saveBeans(arr);
   ['b-name','b-roastdate','b-origin','b-variety','b-shop','b-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('b-process').value='';
+  setBeanStatus('active');
   renderBeanList();populateBeanSelect();
   const btn=document.querySelector('#beans .btn-primary');
   btn.textContent='登録しました！';btn.disabled=true;
@@ -681,24 +703,46 @@ function deleteBean(id){
   saveBeans(getBeans().filter(b=>b.id!==id));
   renderBeanList();populateBeanSelect();
 }
+function toggleBeanStatus(id){
+  const beans=getBeans();
+  const b=beans.find(b=>b.id==id);
+  if(!b)return;
+  b.status=b.status==='inactive'?'active':'inactive';
+  saveBeans(beans);
+  renderBeanList();populateBeanSelect();
+}
+
 function renderBeanList(){
   const beans=getBeans();
   const el=document.getElementById('bean-list');
   if(!beans.length){el.innerHTML='<div class="empty">まだ豆が登録されていません。</div>';return;}
-  el.innerHTML=beans.map(b=>{
+  const active=beans.filter(b=>b.status!=='inactive');
+  const inactive=beans.filter(b=>b.status==='inactive');
+
+  function beanCard(b, isInactive){
     const days=daysFromRoast(b.roastDate);
-    return`<div class="card">
+    return`<div class="card${isInactive?' bean-card-inactive':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:600;margin-bottom:4px">${b.name}${agePill(days)}</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px">${b.name}${isInactive?'':agePill(days)}</div>
           <div style="font-size:13px;color:#666">${b.origin?b.origin+' · ':''}${b.roast}${b.process?' · '+b.process:''}${b.variety?' · 品種: '+b.variety:''}${b.shop?' · '+b.shop:''}</div>
           ${b.roastDate?`<div style="font-size:12px;color:#aaa;margin-top:2px">焙煎日: ${b.roastDate}</div>`:''}
           ${b.note?`<div style="font-size:12px;color:#aaa;margin-top:2px">${b.note}</div>`:''}
         </div>
-        <button class="del-btn" onclick="deleteBean(${b.id})">削除</button>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <button class="del-btn" onclick="deleteBean(${b.id})">削除</button>
+          <button onclick="toggleBeanStatus(${b.id})" style="font-size:12px;padding:3px 10px;border-radius:99px;border:0.5px solid ${isInactive?'#0F6E56':'#ccc'};background:${isInactive?'#E1F5EE':'#f5f3ef'};color:${isInactive?'#0F6E56':'#888'};cursor:pointer">
+            ${isInactive?'✓ 使用中に戻す':'使い切りにする'}
+          </button>
+        </div>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  el.innerHTML=`
+    ${active.length?active.map(b=>beanCard(b,false)).join(''):'<div class="empty" style="padding:1rem">使用中の豆がありません</div>'}
+    ${inactive.length?`<div class="bean-section-label">使い切り</div>${inactive.map(b=>beanCard(b,true)).join('')}`:''}
+  `;
 }
 
 // ---- history ----
