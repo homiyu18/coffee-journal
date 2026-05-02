@@ -146,7 +146,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <select id="f-type" onchange="onTypeChange()">
         <option>（HOT）ドリップコーヒー</option>
         <option>（ICE）ドリップコーヒー</option>
-        <option>カフェラテ</option>
+        <option>（HOT）カフェラテ</option>
+        <option>（ICE）カフェラテ</option>
         <option>エスプレッソ</option>
         <option>コールドブリュー</option>
       </select>
@@ -184,6 +185,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <div>
         <label>焙煎度</label>
         <select id="f-roast">
+          <option value="-" selected>-</option>
           <option>浅煎り</option><option>中煎り</option>
           <option>深煎り</option>
         </select>
@@ -258,7 +260,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
           <label>ミルクの量</label>
           <div class="unit-wrap"><input id="f-milk" type="number" inputmode="decimal" placeholder="150"><span class="unit">ml</span></div>
         </div>
-        <div>
+        <div id="foam-wrap">
           <label>フォーム時間</label>
           <div class="unit-wrap"><input id="f-foam" type="number" inputmode="decimal" placeholder="30"><span class="unit">秒</span></div>
         </div>
@@ -317,6 +319,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <div><label>産地</label><input id="b-origin" type="text" placeholder="例: エチオピア"></div>
       <div><label>焙煎度</label>
         <select id="b-roast">
+          <option value="-" selected>-</option>
           <option>浅煎り</option><option>中煎り</option>
           <option>深煎り</option>
         </select>
@@ -510,23 +513,20 @@ function onTypeChange(){
   const t=document.getElementById('f-type').value;
   const isDrip=DRIP_TYPES.includes(t);
   const isIce=t==='（ICE）ドリップコーヒー';
-  const isLatte=t==='カフェラテ';
+  const isLatte=t==='（HOT）カフェラテ'||t==='（ICE）カフェラテ';
+  const isIceLatte=t==='（ICE）カフェラテ';
   const isCold=t==='コールドブリュー';
 
-  // 投入記録（ドリップのみ）
   document.getElementById('pour-section').style.display=isDrip?'block':'none';
-  // 器具選択（ドリップ＋ハンドドリップのみ）
   const isHandDrip=isDrip&&document.getElementById('f-method').value==='ハンドドリップ';
   document.getElementById('dripper-section').style.display=isHandDrip?'block':'none';
   if(isHandDrip)renderDripperList();
-  // 氷の量（ICEドリップのみ）
-  document.getElementById('ice-section').style.display=isIce?'block':'none';
-  // コールドブリュー
+  document.getElementById('ice-section').style.display=(isIce||isIceLatte)?'block':'none';
   document.getElementById('coldbrew-section').style.display=isCold?'block':'none';
-  // ミルク（カフェラテのみ）
   document.getElementById('milk-section').style.display=isLatte?'block':'none';
+  const foamWrap=document.getElementById('foam-wrap');
+  if(foamWrap) foamWrap.style.display=isIceLatte?'none':'block';
 
-  // カフェラテはエスプレッソマシン固定
   const methodSel=document.getElementById('f-method');
   const badge=document.getElementById('method-fixed-badge');
   if(isLatte){
@@ -603,7 +603,8 @@ function saveEntry(){
   const type=document.getElementById('f-type').value;
   const isDrip=DRIP_TYPES.includes(type);
   const isIce=type==='（ICE）ドリップコーヒー';
-  const isLatte=type==='カフェラテ';
+  const isIceLatte=type==='（ICE）カフェラテ';
+  const isLatte=type==='（HOT）カフェラテ'||isIceLatte;
   const isCold=type==='コールドブリュー';
 
   const beanId=document.getElementById('f-bean').value||null;
@@ -638,7 +639,7 @@ function saveEntry(){
     temp:document.getElementById('f-temp').value,
     dripper:isDrip&&document.getElementById('f-method').value==='ハンドドリップ'?selectedDripper:'',
     pours:isDrip?pours.filter(p=>p.water||p.time).map((p,i)=>({label:POUR_LABELS[i],water:p.water,time:p.time})):[],
-    ice:isIce?document.getElementById('f-ice').value:'',
+    ice:(isIce||isIceLatte)?document.getElementById('f-ice').value:'',
     cbWater:isCold?document.getElementById('f-cb-water').value:'',
     cbStart,cbEnd,cbDuration,
     milk:isLatte?document.getElementById('f-milk').value:'',
@@ -665,8 +666,7 @@ function clearRecordForm(){
   document.getElementById('cb-calc').style.display='none';
   document.getElementById('f-type').value='（HOT）ドリップコーヒー';
   document.getElementById('f-method').disabled=false;
-  document.getElementById('method-fixed-badge').style.display='none';
-  document.getElementById('dripper-section').style.display='none';
+  document.getElementById('method-fixed-badge').style.display='none';  document.getElementById('dripper-section').style.display='none';
   selectedDripper='';
   document.getElementById('pour-section').style.display='block';
   document.getElementById('ice-section').style.display='none';
