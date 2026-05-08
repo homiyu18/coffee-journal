@@ -204,6 +204,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       </div>
     </div>
 
+    <!-- 挽き目 -->
+    <div>
+      <label>挽き目 <span id="grind-val-display" style="font-weight:600;color:#BA7517;margin-left:6px">8.0</span></label>
+      <input type="range" id="f-grind" min="1" max="10" step="0.5" value="8.0"
+        oninput="document.getElementById('grind-val-display').textContent=parseFloat(this.value).toFixed(1)">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-top:3px">
+        <span>1.0 細い</span><span>粗い 10.0</span>
+      </div>
+    </div>
+
     <!-- ICEドリップ：氷の量 -->
     <div id="ice-section" class="sub-section" style="display:none;border-color:#BDE4F4">
       <div class="sub-title" style="color:#0B5FA5">氷の量</div>
@@ -637,6 +647,7 @@ function saveEntry(){
     roastDate:bean?bean.roastDate:'',daysFromRoast:days,
     dose:document.getElementById('f-dose').value,
     temp:document.getElementById('f-temp').value,
+    grind:parseFloat(document.getElementById('f-grind').value).toFixed(1),
     dripper:isDrip&&document.getElementById('f-method').value==='ハンドドリップ'?selectedDripper:'',
     pours:isDrip?pours.filter(p=>p.water||p.time).map((p,i)=>({label:POUR_LABELS[i],water:p.water,time:p.time})):[],
     ice:(isIce||isIceLatte)?document.getElementById('f-ice').value:'',
@@ -661,6 +672,8 @@ function clearRecordForm(){
   ['f-dose','f-temp','f-note','f-origin','f-milk','f-foam','f-ice','f-cb-water','f-cb-start','f-cb-end'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
+  document.getElementById('f-grind').value=8.0;
+  document.getElementById('grind-val-display').textContent='8.0';
   document.getElementById('f-bean').value='';
   document.getElementById('bean-info').style.display='none';
   document.getElementById('cb-calc').style.display='none';
@@ -795,6 +808,7 @@ function renderHistory(){
       </div>
       <div style="font-size:13px;color:#666;margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:3px">
         ${e.dose?`<span>豆: ${e.dose}g</span>`:''}${e.temp?`<span>湯温: ${e.temp}°C</span>`:''}
+        ${e.grind?`<span>挽き目: ${e.grind}</span>`:''}
       </div>
       ${e.flavors&&e.flavors.length?`<div style="margin-top:6px">${e.flavors.map(f=>{
         const cat=FLAVOR_CATEGORIES.find(c=>c.items.includes(f));
